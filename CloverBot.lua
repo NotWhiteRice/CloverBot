@@ -97,13 +97,30 @@ end
 local iter = 0
 local resets = 0
 local chance = 819100 / 8192
+local lowest = 65536
+local highest = 0
+local previous = 0
 function main()
     local trainer = getTrainer()
     local party = getParty()
     gui.text(3, 3, "Resets: "..resets)
     gui.text(3, 23, "Odds (%): "..(100 - chance))
+    gui.text(3, 43, "Lowest SV: "..lowest)
+    gui.text(3, 63, "Most recent SV: "..previous)
+    gui.text(3, 83, "Highest SV: "..highest)
+
+
     if utils.readMemLE(0x02024029, 1) > 0 then
+        previous = party[1]["shinyValue"]
+        if(party[1]["shinyValue"] > highest) then
+            highest = party[1]["shinyValue"]
+        end
+        if(party[1]["shinyValue"] < lowest) then
+            lowest = party[1]["shinyValue"]
+        end
+    
         if party[1]["isShiny"] == 0 then
+            previous = party[1]["shinyValue"]
             local btn = input.get()
             btn["Power"] = true
             joypad.set(btn)
@@ -112,10 +129,12 @@ function main()
         end
     else
         if iter == 0 then
-            local btn = input.get()
-            btn["A"] = true
-            joypad.set(btn)
-            iter = 1
+            if math.random(1, 10) == 2 then
+                local btn = input.get()
+                btn["A"] = true
+                joypad.set(btn)
+                iter = 1
+            end
         else 
             local btn = input.get()
             btn["A"] = false
