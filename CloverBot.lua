@@ -13,7 +13,6 @@ function utils.readMemLE(ptr, len)
 
 end
 
-
 function parseMon(ptr) 
     local mon = {}
     mon.PID = utils.readMemLE(ptr, 4)
@@ -22,7 +21,7 @@ function parseMon(ptr)
     mon.TID = utils.readMemLE(ptr + 4, 2)
     mon.SID = utils.readMemLE(ptr + 6, 2)
     mon.shinyValue = mon.TID ~ mon.SID ~ (mon.PID >> 16) ~ (mon.PID % 65536)
-    mon.isShiny = mon.shinyValue < 8 and 1 or 0
+    mon.isShiny = mon.shinyValue < 16 and 1 or 0
     mon.level = utils.readMemLE(ptr + 84, 1)
     mon.HP = utils.readMemLE(ptr + 86, 2)
     mon.totalHP = utils.readMemLE(ptr + 88, 2)
@@ -66,7 +65,6 @@ function parseMon(ptr)
     local misc = utils.readMemLE(ptr + 32 + substruct[4] * 12, 12) ~ mon.key
 
     return mon
-
 end
 
 function getTrainer()
@@ -94,9 +92,17 @@ function getParty()
     return party
 end
 
+function getData()
+    local data = {}
+    data.frameCount = emu.framecount()
+    data.fps = client.get_approx_framerate()
+
+    return data
+end
+
 local iter = 0
 local resets = 0
-local chance = 819100 / 8192
+local chance = 409500 / 4096
 local lowest = 65536
 local highest = 0
 local previous = 0
@@ -125,7 +131,7 @@ function main()
             btn["Power"] = true
             joypad.set(btn)
             resets = resets + 1
-            chance = chance * 8191 / 8192
+            chance = chance * 4095 / 4096
         end
     else
         if iter == 0 then
