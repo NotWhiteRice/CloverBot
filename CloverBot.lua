@@ -27,23 +27,15 @@ function parseMon(ptr)
     mon.TID = Memory.readWord(ptr + 4)
     mon.SID = Memory.readWord(ptr + 6)
     mon.key = mon.PID ~ mon.otID
-    mon.shinyValue = mon.TID ~ mon.SID ~ (mon.PID >> 16) ~ (mon.PID % 65536)
-    mon.isShiny = mon.shinyValue < 8 and 1 or 0
     mon.lang = Memory.readByte(ptr + 18)
-    mon.hasAnomaly = mon.hasAnomaly or mon.lang ~= 2
     local eggFlags = Memory.readByte(ptr + 19)
-    mon.hasAnomaly = mon.hasAnomaly or eggFlags ~= 2
     mon.isBadEgg = eggFlags & 1
     mon.hasSpecies = (eggFlags >> 1) & 1
     mon.isEgg = (eggFlags >> 2) & 1
     mon.markings = Memory.readByte(ptr + 27)
-    mon.hasAnomaly = mon.hasAnomaly or mon.markings ~= 0
     mon.unknown0 = Memory.readWord(ptr + 30)
-    mon.hasAnomaly = mon.hasAnomaly or mon.unknown0 ~= 0
     mon.status = Memory.readDword(ptr + 80)
-    mon.hasAnomaly = mon.hasAnomaly or mon.status ~= 0
     mon.level = Memory.readByte(ptr + 84)
-    mon.hasAnomaly = mon.hasAnomaly or mon.level ~= 5
     mon.pkrsTimer = Memory.readByte(ptr + 85)
     mon.HP = Memory.readWord(ptr + 86)
     mon.totalHP = Memory.readWord(ptr + 88)
@@ -94,17 +86,12 @@ function parseMon(ptr)
     end
 
     mon.species = (growth[0] & 0xFFFF)
-    mon.hasAnomaly = mon.hasAnomaly or mon.species ~= 4
     mon.heldItem = growth[0] >> 16
-    mon.hasAnomaly = mon.hasAnomaly or mon.heldItem ~= 0
     mon.exp = growth[1]
-    mon.hasAnomaly = mon.hasAnomaly or mon.exp ~= 135
     mon.ppBonuses = growth[2] & 0xFF
-    mon.hasAnomaly = mon.hasAnomaly or mon.ppBonuses ~= 0
     mon.friendship = (growth[2] >> 8) & 0xFF
-    mon.hasAnomaly = mon.hasAnomaly or mon.friendship ~= 70
     mon.unknown1 = growth[2] >> 16
-    mon.hasAnomaly = mon.hasAnomaly or mon.unknown1 ~= 0
+    mon.isShiny = (mon.unknown1 >> 8) & 1
 
     mon.moves = {
         attacks[0] & 0xFFFF,
@@ -120,25 +107,16 @@ function parseMon(ptr)
     }
 
     mon.hpEV = evCond[0] & 0xFF
-    mon.hasAnomaly = mon.hasAnomaly or mon.hpEV ~= 0
     mon.atkEV = (evCond[0] >> 8) & 0xFF
-    mon.hasAnomaly = mon.hasAnomaly or mon.atkEV ~= 0
     mon.defEV = (evCond[0] >> 16) & 0xFF
-    mon.hasAnomaly = mon.hasAnomaly or mon.defEV ~= 0
     mon.spdEV = evCond[0] >> 24
-    mon.hasAnomaly = mon.hasAnomaly or mon.spdEV ~= 0
     mon.spAtkEV = evCond[1] & 0xFF
-    mon.hasAnomaly = mon.hasAnomaly or mon.spAtkEV ~= 0
     mon.spDefEV = (evCond[1] >> 8) & 0xFF
-    mon.hasAnomaly = mon.hasAnomaly or mon.spDefEV ~= 0
     mon.unknown2 = ((evCond[1] >> 16) & 0xFF) << 32 + evCond[2]
-    mon.hasAnomaly = mon.hasAnomaly or mon.unknown2 ~= 0
 
     mon.pokerus = misc[0] & 0xFF
-    mon.hasAnomaly = mon.hasAnomaly or (mon.pokerus == 0 and mon.pkrsTimer ~= 255)
     mon.metLocation = (misc[0] >> 8) & 0xFF
     mon.originData = misc[0] >> 16
-    mon.hasAnomaly = mon.hasAnomaly or mon.originData ~= 37381
     local ivFlags = misc[1]
     mon.hpIV = ivFlags & 0x1F
     mon.atkIV = (ivFlags >> 5) & 0x1F
@@ -147,9 +125,7 @@ function parseMon(ptr)
     mon.spAtkIV = (ivFlags >> 20) & 0x1F
     mon.spDefIV = (ivFlags >> 25) & 0x1F
     mon.altAbility = (ivFlags >> 31) & 0x1F
-    mon.hasAnomaly = mon.hasAnomaly or mon.altAbility ~= 0
     mon.unknown3 = misc[2]
-    mon.hasAnomaly = mon.hasAnomaly or mon.unknown3 ~= 2147483648
 
     return mon
 end
@@ -188,36 +164,15 @@ function getData()
 end
 
 local iter = 0
-local resets = 0
-local chance = 819100 / 8192
-local lowest = 65536
-local highest = 0
-local previous = 0
 function main()
     local trainer = getTrainer()
     local party = getParty()
-    gui.text(3, 3, "Resets: "..resets)
-    gui.text(3, 23, "Odds (%): "..(100 - chance))
-    gui.text(3, 43, "Lowest SV: "..lowest)
-    gui.text(3, 63, "Most recent SV: "..previous)
-    gui.text(3, 83, "Highest SV: "..highest)
 
     if Memory.readByte(0x02024029) > 0 then
-        previous = party[1]["shinyValue"]
-        if(party[1]["shinyValue"] > highest) then
-            highest = party[1]["shinyValue"]
-        end
-        if(party[1]["shinyValue"] < lowest) then
-            lowest = party[1]["shinyValue"]
-        end
-
         if party[1]["isShiny"] == 0 and party[1]["hasAnomaly"] == false then
-            previous = party[1]["shinyValue"]
             local btn = input.get()
             btn["Power"] = true
             joypad.set(btn)
-            resets = resets + 1
-            chance = chance * 8191 / 8192
         end
     else
         if iter == 0 then
